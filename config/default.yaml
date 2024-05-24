@@ -1,0 +1,72 @@
+# Positional Encoders
+encoder:
+  d_input : 3           # Number of input dimensions
+  n_freqs : 10          # Number of encoding functions for samples
+  log_space : True     # If set, frequencies scale in log space
+  use_viewdirs : True   # If set, use view direction as input
+  n_freqs_views : 4     # Number of encoding functions for views
+  use_fc_encoder: False  # If set, encode fc
+  n_freqs_fc: 4        # Number of encoding frequencies for fc
+
+# Sampling parameters
+sampling:
+  # Stratified sampling
+  near : 1.0E-2
+  far : 9
+  n_samples : 128         # Number of spatial samples per ray
+  perturb : True         # If set, applies noise to sample positions
+  inverse_depth : False  # If set, samples points linearly in inverse depth
+
+  # Angle-of-Arrival Sampling
+  known_aoa: True
+  num_theta_samples : 180
+  num_phi_samples : 360
+  perturb_aoa: False 
+
+  # Hierarchical sampling
+  n_samples_hierarchical : 128   # Number of samples per ray
+  perturb_hierarchical : True  # If set, applies noise to sample positions
+
+  # Extra rays
+  num_extra_rays : 10
+
+  # DoA noise
+  doa_noise: 0.1
+
+# Model Parameters
+models:
+  d_filter : 128          # Dimensions of linear layer filters
+  n_layers : 6           # Number of layers in network bottleneck
+  skip : [4,]               # Layers at which to apply input residual
+  use_fine_model : True   # If set, creates a fine model
+  d_filter_fine : 128     # Dimensions of linear layer filters of fine network
+  n_layers_fine : 6       # Number of layers in fine network bottleneck
+
+# Optimizer params.
+optimizer:
+  # Learning rate
+  lr : 5.0E-4
+  weight_decay: 0
+  optimizer: Adam
+  use_lr_scheduler: True
+  lr_scheduler: ReduceLROnPlateau
+  scheduler_patience: 10
+  scheduler_factor: 0.9
+  min_lr: 1.0E-5
+
+# Training
+training:
+  n_iters : 100000
+  n_chs: 1                   # Number of channels used for training
+  batch_size : 32          # Number of STA samples per gradient step
+  chunksize : 33554432           # Modify as needed to fit in GPU memory
+  display_rate : 100          # Display test output every X epochs
+  save_rate: 100               # Save a checkpoint every X epochs
+  save_dir: ./ckpt/
+
+# Early Stopping
+early_stopping:
+  warmup_iters : 4000          # Number of iterations during warmup phase
+  warmup_min_fitness : 2.0   # Min val PSNR to continue training at warmup_iters
+  n_restarts : 10             # Number of times to restart if training stalls
+  patience: 500
