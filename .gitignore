@@ -1,2 +1,3 @@
 ckpt/
 __pycache__/
+.gitignore
