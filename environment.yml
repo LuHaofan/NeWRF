@@ -1,0 +1,27 @@
+name: newrf
+channels:
+  - pytorch
+  - nvidia
+  - anaconda
+  - conda-forge
+  - defaults
+dependencies:
+  - cuda-toolkit=11.7.1
+  - numpy=1.23.5
+  - pandas=1.5.3
+  - pip=22.3.1
+  - python=3.10.9
+  - pytorch=1.13.1
+  - pyyaml=6.0
+  - scipy=1.10.0
+  - tensorboardx=2.2
+  - yaml=0.2.5
+  - pip:
+      - joblib==1.3.2
+      - matplotlib==3.7.0
+      - multiprocess==0.70.16
+      - numpy-stl==3.0.1
+      - omegaconf==2.3.0
+      - scikit-learn==1.3.2
+      - tensorboard==2.12.0
+      - tqdm==4.64.1

@@ -3,9 +3,6 @@ from torch import nn
 from typing import Optional, Tuple, List
 
 class NeWRF(nn.Module):
-    r"""
-    Neural radiance fields module.
-    """
 
     def __init__(
         self,
@@ -31,7 +28,6 @@ class NeWRF(nn.Module):
 
         # Bottleneck layers
         if self.d_viewdirs is not None:
-            # If using viewdirs, split alpha and RGB
             self.alpha_out = nn.Linear(d_filter, 1)
             self.realimag_filters = nn.Linear(d_filter, d_filter)
             self.branch = nn.Linear(d_filter + self.d_viewdirs, d_filter // 2)

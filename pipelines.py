@@ -20,6 +20,7 @@ def pipeline_single_freq_batch(
     logging.debug("Run pipeline_single_freq ...")
     predictions = []
     for batch, batch_viewdirs in zip(batches, batches_viewdirs):
+        # print(batch.dtype, batch_viewdirs.dtype)
         predictions.append(model(batch, viewdirs=batch_viewdirs))
 
     raw = torch.cat(predictions, dim=0).reshape(list(query_points.shape[:2]) + [predictions[0].shape[-1]])
@@ -31,17 +32,14 @@ def pipeline_single_freq_batch(
 def pipeline(
         cfg,
         sta_id,
-        dsLoader,
+        loader,
         model, 
         fine_model, 
         encode, 
         encode_viewdirs, 
         optimizer,
-        fc_lst,
         loss_fn,
         synthesizer,
-        kwargs_sample_stratified,
-        kwargs_sample_hierarchical,
         device,
         mode = "Train",
     ):
@@ -49,22 +47,38 @@ def pipeline(
     if mode == 'Train':
         logging.info("Model in training mode")
         model.train()
+        fine_model.train()
         
     elif mode == 'Eval':
         logging.info("Model in evaluation mode")
         model.eval()
+        fine_model.eval()
+
+    # Sampling configurations
+    kwargs_sample_stratified = {
+        'n_samples': cfg.sampling.n_samples,
+        'perturb': cfg.sampling.perturb,
+        'inverse_depth': cfg.sampling.inverse_depth
+    }
+    
+    kwargs_sample_hierarchical = {
+        "perturb": cfg.sampling.perturb_hierarchical,
+        "n_new_samples": cfg.sampling.n_samples_hierarchical
+    }
 
     # Get ground truth CFR and Station Location
-    sta_loc = torch.tensor(np.array(dsLoader.get_loc_batch("STA", sta_id, normalize = False)), 
-                           dtype=torch.float32).to(device)   # [batch_size, 3]
+    # sta_loc = torch.tensor(np.array(loader.get_loc_batch("STA", sta_id, normalize = False)), 
+    #                        dtype=torch.float32).to(device)   # [batch_size, 3]
+    sta_loc = torch.tensor(loader.get_loc_batch("STA", sta_id)).to(device)
 
     # Get Rays for backtracing
-    aoa_lst = dsLoader.get_aoa_batch(sta_id)
+    aoa_lst = loader.get_aoa_batch(sta_id)
     rays_os = []
     rays_ds = []
     n_rays_lst = []
     for i in range(len(aoa_lst)):
-        ray_gen = RayGenerator(sta_loc[i], cfg, device, torch.tensor(aoa_lst[i], dtype=torch.float32))
+        aoa = aoa_lst[i]
+        ray_gen = RayGenerator(sta_loc[i], cfg, device, torch.tensor(aoa, dtype=torch.float32))
         rays_o, rays_d = ray_gen.get_rays()
         rays_os.append(rays_o)
         rays_ds.append(rays_d)
@@ -73,10 +87,8 @@ def pipeline(
 
     rays_o = torch.cat(rays_os, dim = 0)
     rays_d = torch.cat(rays_ds, dim = 0)
-    n_rays_lst = torch.tensor(n_rays_lst, dtype=torch.int16)
 
-    channel_idx = 0
-    fc = torch.tensor(fc_lst[channel_idx], dtype=torch.float32).to(device)
+    fc = torch.tensor(loader.get_freq()).to(device)
     # Sampling the rays
     (
         batches, 
@@ -128,16 +140,14 @@ def pipeline(
     
     del batches, batches_viewdirs, query_points
     
-    # Calculate Loss and backprop!
+    # Calculate Loss and backprop
     ap_id = 1
-    target_cfr = torch.tensor(np.concatenate(dsLoader.get_cfr_batch(ap_id, sta_id, fc_lst), axis=0).flatten(),
-                              dtype=torch.complex64).to(device)  # [batch_size, 1]
-    
-    coarse_loss = loss_fn(syn_cfr, target_cfr)
+    target_cfr = torch.tensor(loader.get_cfr_batch(ap_id, sta_id)).flatten().to(device)  # [batch_size, 1]
+    coarse_loss = loss_fn(syn_cfr, target_cfr) 
     fine_loss = loss_fn(syn_cfr_fine, target_cfr)
     
     if mode == "Train":
-        total_loss = 0.1*coarse_loss+0.9*fine_loss
+        total_loss = cfg.training.lambda_coarse*coarse_loss+(1-cfg.training.lambda_coarse)*fine_loss
         optimizer.zero_grad()
         total_loss.backward()
         optimizer.step()

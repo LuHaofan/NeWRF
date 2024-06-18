@@ -14,6 +14,8 @@ def get_chunks(
 ) -> List[torch.Tensor]:
     r"""
     Divide an input into chunks.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     return [inputs[i:i + chunksize] for i in range(0, inputs.shape[0], chunksize)]
 
@@ -25,6 +27,8 @@ def prepare_chunks(
 ) -> List[torch.Tensor]:
     r"""
     Encode and chunkify points to prepare for NeRF model.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     points = points.reshape((-1, 3))
     points = encoding_function(points)
@@ -40,6 +44,8 @@ def prepare_viewdirs_chunks(
 ) -> List[torch.Tensor]:
     r"""
     Encode and chunkify viewdirs to prepare for NeRF model.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     # Prepare the viewdirs
     viewdirs = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
@@ -162,55 +168,12 @@ def init_models(cfg, device, ckpt = None):
                                       min_lr = cfg.optimizer.min_lr, verbose = True)
     else:
         scheduler = None
-    # Early Stopping
-    warmup_stopper = EarlyStopping(patience=cfg.early_stopping.patience)
-    return model, fine_model, encode, encode_viewdirs, optimizer, scheduler, synthesizer, warmup_stopper
 
-def save_ckpt(iter, coarse_model_state_dict, fine_model_state_dict, optimizer_state_dict, save_dir):
+    return model, fine_model, encode, encode_viewdirs, optimizer, scheduler, synthesizer
+
+def save_ckpt(coarse_model, fine_model, optimizer, save_path):
     torch.save({
-        'iterations': iter,
-        'coarse_model_state_dict': coarse_model_state_dict,
-        'fine_model_state_dict':fine_model_state_dict,
-        'optimizer_state_dict': optimizer_state_dict,
-    }, os.path.join(save_dir, f"ckpt_iter_{iter}.pt"))
-
-
-
-class EarlyStopping:
-    r"""
-    Early stopping helper based on fitness criterion.
-    """
-    def __init__(
-        self,
-        patience: int = 30,
-        margin: float = 1e-4
-    ):
-        self.best_coarse_fitness = 0.0  # In our case PSNR
-        self.best_coarse_iter = 0
-        self.best_fine_fitness = 0.0
-        self.best_fine_iter = 0
-        self.margin = margin
-        self.patience = patience or float('inf')  # epochs to wait after fitness stops improving to stop  
-
-    def __call__(
-        self,
-        iter: int,
-        coarse_fitness: float,
-        fine_fitness: float
-    ):
-        r"""
-        Check if criterion for stopping is met.
-        """
-        if (coarse_fitness - self.best_coarse_fitness) > self.margin:
-            self.best_coarse_iter = iter
-            self.best_coarse_fitness = coarse_fitness
-        if (fine_fitness - self.best_fine_fitness) > self.margin:
-            self.best_fine_iter = iter
-            self.best_fine_fitness = fine_fitness
-        if (fine_fitness > 2 and coarse_fitness > 2):
-            self.patience = min(self.patience * 2, 3000)
-
-        delta_coarse = iter - self.best_coarse_iter
-        delta_fine = iter - self.best_fine_iter
-        stop = (delta_coarse >= self.patience) or (delta_fine >= self.patience)  # stop training if patience exceeded
-        return stop
+        'coarse_model_state_dict': coarse_model.state_dict(),
+        'fine_model_state_dict':fine_model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, save_path)

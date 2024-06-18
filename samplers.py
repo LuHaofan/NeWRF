@@ -1,9 +1,5 @@
 import torch
 from typing import Optional, Tuple, List
-import matplotlib.pyplot as plt
-import numpy as np
-from ray_gen import RayGenerator
-import logging
 
 
 def sample_stratified(
@@ -17,6 +13,8 @@ def sample_stratified(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     r"""
     Sample along ray from regularly-spaced bins.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     # Grab samples for space integration along ray
     t_vals = torch.linspace(0., 1., n_samples, device=rays_o.device)
@@ -50,6 +48,8 @@ def sample_pdf(
 ) -> torch.Tensor:
     r"""
     Apply inverse transform sampling to a weighted set of points.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     # Normalize weights to get PDF.
     pdf = (weights + 1e-5) / torch.sum(weights + 1e-5, -1, keepdims=True) # [n_rays, weights.shape[-1]]
@@ -98,6 +98,8 @@ def sample_hierarchical(
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     r"""
     Apply hierarchical sampling to the rays.
+    Borrowed from: Mason McGough 
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     # Draw samples from PDF using z_vals as bins and weights as probabilities.
     z_vals_mid = .5 * (z_vals[..., 1:] + z_vals[..., :-1])   # [N_rays, N_samples_stratified-1] --> N_bins = N_samples_stratified-1

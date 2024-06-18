@@ -17,7 +17,11 @@ def spherical2euclidian(theta, phi):
     return torch.stack([x, y, z]).T
 
 class RayGenerator:
-    def __init__(self, center, cfg, device, aoa = None) -> None:
+    def __init__(self, 
+                 center: torch.Tensor, 
+                 cfg, 
+                 device: torch.device, 
+                 aoa:torch.Tensor = None) -> None:
         self.center = center
         self.d_theta = torch.pi/cfg.sampling.num_theta_samples
         self.d_phi = 2*torch.pi/cfg.sampling.num_phi_samples
@@ -27,13 +31,6 @@ class RayGenerator:
         self.theta = None
         self.phi = None
         self.aoa = aoa
-
-    def stratified_sampling(self, vec, n_samples):
-        mids = .5 * (vec[1:] + vec[:-1])
-        upper = torch.concat([mids, vec[-1:]], dim=-1)
-        lower = torch.concat([vec[:1], mids], dim=-1)
-        t_rand = torch.rand([n_samples], device=self.device)
-        return lower + (upper - lower) * t_rand
     
     def get_rays(self):
         r"""
@@ -59,7 +56,7 @@ class RayGenerator:
                 uz = torch.sin(theta_vec)
                 rays_d_extra = torch.stack([ux, uy, uz], dim=-1).reshape([-1, 3]).to(self.device)
                 rays_d = torch.cat([rays_d, rays_d_extra], dim = 0)
-            rays_o = rays_o.unsqueeze(0).expand(rays_d.shape)
+            rays_o = rays_o.expand(rays_d.shape)
 
         else:
             rays_o = self.center.to(self.device)
@@ -79,7 +76,7 @@ class RayGenerator:
                                 rays_d.reshape([-1, 3]), 
                                 torch.tensor([[0, 0, -1]], device=self.device)], 
                                 dim = 0)
-            rays_o = rays_o.unsqueeze(0).expand(rays_d.shape)   # [n_rays, 3]
+            rays_o = rays_o.expand(rays_d.shape)   # [n_rays, 3]
             
         return rays_o, rays_d
 

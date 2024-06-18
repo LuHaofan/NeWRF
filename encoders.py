@@ -2,7 +2,9 @@ import torch
 from torch import nn
 class PositionalEncoder(nn.Module):
     r"""
-    Sine-cosine positional encoder for input points.
+    Borrowed from: Mason McGough 
+    Description: Sine-cosine positional encoder for input points.
+    Source: https://towardsdatascience.com/its-nerf-from-nothing-build-a-vanilla-nerf-with-pytorch-7846e4c45666
     """
     def __init__(
       self,

@@ -1,3 +1,4 @@
-ckpt/
 __pycache__/
 .gitignore
+tmp/
+runs/
