@@ -12,3 +12,4 @@ python train.py --env [environment]
 python eval.py --env [environment] --ckpt [checkpoint file] 
 ```
 - demo.ipynb provides visualization during the training process 
+![demo outcome](Figures\output.png)
