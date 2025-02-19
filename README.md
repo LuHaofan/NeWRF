@@ -10,7 +10,8 @@ NeWRF: A Deep Learning Framework for Wireless Radiation Field Reconstruction and
 - CUDA: 11.7
 
 ## Usage
-- simulator/ contains the simulation code. Run main.m in MATLAB to generate datasets
+- simulator/ contains the simulation code. Run main.m in MATLAB to generate datasets.
+- Use mat2pkl.py script in the simulator/ to convert the dataset from .mat to the .pkl.
 - train.py contains the training code. Usage:
 ```
 python train.py --env [environment]
