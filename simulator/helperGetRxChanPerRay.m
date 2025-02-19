@@ -5,8 +5,8 @@ function [lastXptlst, channelCoeffs] = helperGetRxChanPerRay(rays, fc, cfg, sing
         lastXptlst = zeros(3, n_paths);
         channelCoeffs = zeros(1, n_paths);
         for i = 1:n_paths
-            ray_pl = rays(i).PathLoss; 
-            ray_pp = rays(i).PhaseShift;
+            ray_pl = fspl(rays(i).PropagationDistance, fc); %rays(i).PathLoss; 
+            ray_pp = 2*pi*fc*rays(i).PropagationDistance/physconst("lightspeed"); %rays(i).PhaseShift;
             channelCoeffs(i) = 10^(-ray_pl/20).*exp(-1j*ray_pp);
             lastXptlst(:, i) = ix_pts{i}(:, end-1);
         end

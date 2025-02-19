@@ -6,8 +6,8 @@ function cfr = helperGenerateCFRraw(rays, fc, cfg, single_fc)
     coeffs = zeros(1, n_paths);
     if single_fc
         for j = 1:n_paths
-            ray_pl = rays(j).PathLoss;
-            ray_pp = rays(j).PhaseShift; 
+            ray_pl = fspl(rays(j).PropagationDistance, fc);%rays(j).PathLoss;
+            ray_pp = 2*pi*fc*rays(j).PropagationDistance/physconst("lightspeed"); %rays(j).PhaseShift; 
             coeffs(j) = 10^(-ray_pl/20).*exp(-1j*ray_pp);
         end
         cfr = sum(coeffs);
